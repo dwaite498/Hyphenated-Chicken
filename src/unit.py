@@ -9,7 +9,7 @@ class Scout:
     def move(self, direction, game):
         current_time = game.time.time()
         if current_time - self.last_move < TICK_RATE:
-            return False  # Move only once per tick
+            return False
         new_x, new_y = self.x, self.y
         if direction == "north" and self.y > 0:
             new_y -= 1
