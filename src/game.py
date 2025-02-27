@@ -3,6 +3,7 @@ import os
 import time
 import pygame
 from colony import Colony
+import unit
 from settings import MAP_WIDTH, MAP_HEIGHT, MOVE_TICK_RATE, METAL_TICK_RATE, COMBAT_TICK_RATE, BUILD_TIME, WINDOW_SIZE, TILE_SIZE, FLASH_RATE
 
 class Game:
@@ -21,7 +22,7 @@ class Game:
         self.fog[5][5] = 'C'
         self.scouts = []
         self.constructors = []
-        self.enemies = [self.unit.Enemy(x, y) for x, y in self.planet["enemies"]]
+        self.enemies = [unit.Enemy(x, y) for x, y in self.planet["enemies"]]
         self.selected = []
         self.running = True
         self.paused = False
@@ -46,7 +47,7 @@ class Game:
         self.fog[5][5] = 'C'
         self.scouts = []
         self.constructors = []
-        self.enemies = [self.unit.Enemy(x, y) for x, y in self.planet["enemies"]]
+        self.enemies = [unit.Enemy(x, y) for x, y in self.planet["enemies"]]
         self.selected = []
         self.paused = False
         self.game_started = False
@@ -163,7 +164,7 @@ class Game:
                             self.selected = []
                             if self.debug:
                                 print(f"Deselected at ({x}, {y})")
-                elif event.button == 3 and self.selected and all(isinstance(sel, self.unit.Scout) for sel in self.selected):
+                elif event.button == 3 and self.selected and all(isinstance(sel, unit.Scout) for sel in self.selected):
                     for scout in self.selected:
                         scout.move_to(x, y, self)
                     if self.debug:
@@ -189,7 +190,7 @@ class Game:
                     target = targets[0]
                     target.health -= 1
                     if target.health <= 0:
-                        if isinstance(target, self.unit.Scout):
+                        if isinstance(target, unit.Scout):
                             self.scouts.remove(target)
                             if target in self.selected:
                                 self.selected.remove(target)
@@ -222,7 +223,7 @@ class Game:
                     target = targets[0]
                     target.health -= 1
                     if target.health <= 0:
-                        if isinstance(target, self.unit.Scout):
+                        if isinstance(target, unit.Scout):
                             self.scouts.remove(target)
                             if target in self.selected:
                                 self.selected.remove(target)
