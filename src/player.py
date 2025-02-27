@@ -1,3 +1,5 @@
+from settings import STARTING_ROOM
+
 class Player:
     def __init__(self):
         self.location = STARTING_ROOM
