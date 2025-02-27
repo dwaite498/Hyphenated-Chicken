@@ -1,6 +1,6 @@
 MAP_WIDTH = 10
 MAP_HEIGHT = 10
-MOVE_TICK_RATE = 0.25  # Seconds per scout move
+MOVE_TICK_RATE = 0.5   # Seconds per square movement
 METAL_TICK_RATE = 1    # Seconds per metal gain
 COMBAT_TICK_RATE = 1   # Seconds per combat tick
 BUILD_TIME = 30        # Seconds to build colony
