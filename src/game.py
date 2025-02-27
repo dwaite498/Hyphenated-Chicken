@@ -98,7 +98,7 @@ class Game:
                 elif event.key == pygame.K_d:
                     self.debug = not self.debug
                     print(f"Debug mode: {self.debug}")
-                elif event.key == pygame.K_b and self.colonies and self.colonies[0] in self.selected:
+                elif event.key == pygame.K_b and self.colonies and any(c in self.selected for c in self.colonies):
                     self.show_build_menu = not self.show_build_menu
                     self.show_guide = False
                     if self.debug:
@@ -113,7 +113,7 @@ class Game:
                             self.show_build_menu = False
                             if self.debug:
                                 print(f"Guide toggled: {self.show_guide}")
-                        elif 500 <= event.pos[1] <= 530 and self.colonies and self.colonies[0] in self.selected:  # Build button
+                        elif 500 <= event.pos[1] <= 530 and self.colonies and any(c in self.selected for c in self.colonies):  # Build button
                             self.show_build_menu = not self.show_build_menu
                             self.show_guide = False
                             if self.debug:
@@ -124,7 +124,7 @@ class Game:
                                 print("Game restarted from playfield")
                     guide_active = self.show_guide and 350 <= event.pos[0] <= 450 and 500 <= event.pos[1] <= 540
                     # Build menu options
-                    if self.show_build_menu and self.colonies and self.colonies[0] in self.selected:
+                    if self.show_build_menu and self.colonies and any(c in self.selected for c in self.colonies):
                         if 610 <= event.pos[0] <= 710:
                             if 200 <= event.pos[1] <= 230:
                                 new_scout = self.colonies[0].build_scout()
@@ -178,17 +178,17 @@ class Game:
                                 self.selected = [selected_scout]
                                 if self.debug:
                                     print(f"Selected scout at ({x}, {y})")
-                        elif self.fog[y][x] == 'C' and not any(isinstance(sel, unit.Scout) for sel in self.selected):
+                        else:
                             for colony in self.colonies:
-                                if colony.x == x and colony.y == y:
+                                if colony.x == x and colony.y == y and not any(isinstance(sel, unit.Scout) for sel in self.selected):
                                     self.selected = [colony]
                                     if self.debug:
                                         print(f"Selected colony at ({x}, {y})")
                                     break
-                        else:
-                            self.selected = []
-                            if self.debug:
-                                print(f"Deselected at ({x}, {y})")
+                            else:
+                                self.selected = []
+                                if self.debug:
+                                    print(f"Deselected at ({x}, {y})")
                 elif event.button == 3 and self.selected and all(isinstance(sel, unit.Scout) for sel in self.selected):
                     for scout in self.selected:
                         scout.move_to(x, y, self)
@@ -393,9 +393,15 @@ class Game:
                 tile = self.fog[hover_y][hover_x]
                 hover_text = ""
                 if tile == 'C':
-                    hover_text = "Colony"
+                    for colony in self.colonies:
+                        if colony.x == hover_x and colony.y == hover_y:
+                            hover_text = f"Colony - HP: {colony.health}"
+                            break
                 elif tile == 'S':
-                    hover_text = "Scout"
+                    for scout in self.scouts:
+                        if scout.x == hover_x and scout.y == hover_y:
+                            hover_text = f"Scout - HP: {scout.health}"
+                            break
                 elif tile == 'M':
                     hover_text = "Metal Deposit"
                 elif tile == 'E':
@@ -409,6 +415,22 @@ class Game:
                     hover_render = self.font.render(hover_text, True, (255, 255, 255))
                     self.screen.blit(hover_render, (10, 580))
                     pygame.draw.rect(self.screen, (255, 255, 255), pygame.Rect(hover_x * TILE_SIZE, hover_y * TILE_SIZE, TILE_SIZE, TILE_SIZE), 2)
+            # Guide pop-up
+            if self.show_guide:
+                guide_popup = pygame.Rect(300, 150, 200, 200)
+                pygame.draw.rect(self.screen, (255, 255, 255), guide_popup)
+                pygame.draw.rect(self.screen, (0, 0, 0), guide_popup, 2)
+                controls = [
+                    "Left Click: Select",
+                    "Shift + Left: Multi-select",
+                    "Right Click: Move",
+                    "Space: Pause",
+                    "B: Build menu",
+                    "D: Debug"
+                ]
+                for i, line in enumerate(controls):
+                    text = self.font.render(line, True, (0, 0, 0))
+                    self.screen.blit(text, (310, 160 + i * 30))
             # Build menu
             if self.show_build_menu:
                 build_menu = pygame.Rect(600, 150, 200, 200)
