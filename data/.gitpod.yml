@@ -1,7 +1,7 @@
 image: gitpod/workspace-full
 tasks:
-  - init: pip install -r requirements.txt && Xvfb :99 -screen 0 1024x768x16 &
-    command: pip install -r requirements.txt && DISPLAY=:99 python src/main.py
+  - init: pip install -r requirements.txt
+    command: vncserver :1 -geometry 1024x768 -depth 24 && DISPLAY=:1 python src/main.py
 ports:
-  - port: 5900
+  - port: 5901
     onOpen: ignore
