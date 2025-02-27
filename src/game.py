@@ -1,10 +1,13 @@
 import json
+import os
 from player import Player
 
 class Game:
     def __init__(self):
         self.player = Player()
-        with open("../data/rooms.json", "r") as f:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        rooms_path = os.path.join(script_dir, "..", "data", "rooms.json")
+        with open(rooms_path, "r") as f:
             self.rooms = json.load(f)
         self.running = True
 
