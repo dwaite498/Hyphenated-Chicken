@@ -98,7 +98,7 @@ class Game:
         hud_text = ""
         if self.selected == self.colony:
             hud_text = f"Colony at (5,5) - Metal: {self.colony.metal}"
-        elif self.selected == self.scout:
+        elif self.selected == self.scout and self.scout:
             hud_text = f"Scout at ({self.scout.x}, {self.scout.y})"
         if hud_text:
             hud_render = self.font.render(hud_text, True, (255, 255, 255))
