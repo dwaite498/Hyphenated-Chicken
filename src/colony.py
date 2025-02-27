@@ -5,8 +5,8 @@ class Colony:
         self.metal = 0
 
     def update(self):
-        from settings import METAL_RATE
-        self.metal += METAL_RATE
+        from settings import METAL_TICK_RATE
+        self.metal += METAL_TICK_RATE
 
     def build_scout(self):
         if self.metal >= 5:
