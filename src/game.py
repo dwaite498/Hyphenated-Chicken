@@ -19,7 +19,6 @@ class Game:
             self.planet = json.load(f)
         self.colonies = [Colony(4, 4)]  # Center at (4, 4)
         self.fog = [['?' for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
-        self.fog[4][4] = 'C'
         # Initial 1-tile vision around colony
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
@@ -55,7 +54,6 @@ class Game:
             self.planet = json.load(f)
         self.colonies = [Colony(4, 4)]
         self.fog = [['?' for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
-        self.fog[4][4] = 'C'
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
                 x, y = 4 + dx, 4 + dy
@@ -202,47 +200,34 @@ class Game:
                 colony.update()
             self.last_metal_tick = current_time
         if current_time - self.last_combat_tick >= COMBAT_TICK_RATE:
-            # Combat logic
+            # Combat logic (8 directions, no friendly fire)
             for colony in self.colonies[:]:
                 targets = []
-                for scout in self.scouts:
-                    if abs(scout.x - colony.x) + abs(scout.y - colony.y) == 1:
-                        targets.append(scout)
                 for enemy in self.enemies:
-                    if abs(enemy.x - colony.x) + abs(enemy.y - colony.y) == 1:
+                    if abs(enemy.x - colony.x) <= 1 and abs(enemy.y - colony.y) <= 1:
                         targets.append(enemy)
                 if targets:
                     target = targets[0]
                     target.health -= 1
                     if target.health <= 0:
-                        if isinstance(target, unit.Scout):
-                            self.scouts.remove(target)
-                            if target in self.selected:
-                                self.selected.remove(target)
-                        else:
-                            self.enemies.remove(target)
+                        self.enemies.remove(target)
             for scout in self.scouts[:]:
                 targets = []
                 for enemy in self.enemies:
-                    if abs(enemy.x - scout.x) + abs(enemy.y - scout.y) == 1:
+                    if abs(enemy.x - scout.x) <= 1 and abs(enemy.y - scout.y) <= 1:
                         targets.append(enemy)
-                for colony in self.colonies:
-                    if abs(colony.x - scout.x) + abs(colony.y - scout.y) == 1:
-                        targets.append(colony)
                 if targets:
                     target = targets[0]
                     target.health -= 1
-                    if target.health <= 0 and isinstance(target, Colony):
-                        self.colonies.remove(target)
-                        if target in self.selected:
-                            self.selected.remove(target)
+                    if target.health <= 0:
+                        self.enemies.remove(target)
             for enemy in self.enemies[:]:
                 targets = []
                 for scout in self.scouts:
-                    if abs(scout.x - enemy.x) + abs(scout.y - enemy.y) == 1:
+                    if abs(scout.x - enemy.x) <= 1 and abs(scout.y - enemy.y) <= 1:
                         targets.append(scout)
                 for colony in self.colonies:
-                    if abs(colony.x - enemy.x) + abs(colony.y - enemy.y) == 1:
+                    if abs(colony.x - enemy.x) <= 1 and abs(colony.y - enemy.y) <= 1:
                         targets.append(colony)
                 if targets:
                     target = targets[0]
@@ -320,12 +305,8 @@ class Game:
                     rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                     if tile == '?':
                         pygame.draw.rect(self.screen, (100, 100, 100), rect)
-                    elif tile == 'C':
-                        pygame.draw.rect(self.screen, (0, 255, 0), rect)
                     elif tile == 'M':
                         pygame.draw.rect(self.screen, (255, 255, 0), rect)
-                    elif tile == 'E':
-                        pygame.draw.rect(self.screen, (255, 0, 0), rect)
                     pygame.draw.rect(self.screen, (50, 50, 50), rect, 1)
             # Render units and colonies explicitly
             for colony in self.colonies:
@@ -341,8 +322,13 @@ class Game:
                 if scout in self.selected:
                     pygame.draw.rect(self.screen, (255, 255, 255), rect, 2)
                 if scout.x != scout.target_x or scout.y != scout.target_y:
+                    mid_x = scout.x if scout.x == scout.target_x else scout.x + (scout.target_x - scout.x) / abs(scout.target_x - scout.x)
+                    mid_y = scout.y if scout.y == scout.target_y else scout.y + (scout.target_y - scout.y) / abs(scout.target_y - scout.y)
                     pygame.draw.line(self.screen, (255, 255, 255),
                                     (scout.x * TILE_SIZE + TILE_SIZE // 2, scout.y * TILE_SIZE + TILE_SIZE // 2),
+                                    (mid_x * TILE_SIZE + TILE_SIZE // 2, mid_y * TILE_SIZE + TILE_SIZE // 2), 2)
+                    pygame.draw.line(self.screen, (255, 255, 255),
+                                    (mid_x * TILE_SIZE + TILE_SIZE // 2, mid_y * TILE_SIZE + TILE_SIZE // 2),
                                     (scout.target_x * TILE_SIZE + TILE_SIZE // 2, scout.target_y * TILE_SIZE + TILE_SIZE // 2), 2)
             for constructor in self.constructors:
                 rect = pygame.Rect(constructor.x * TILE_SIZE, constructor.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
