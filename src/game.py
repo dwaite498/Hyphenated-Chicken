@@ -1,53 +1,48 @@
 import json
 import os
-from player import Player
+import time
+from colony import Colony
+from settings import MAP_WIDTH, MAP_HEIGHT, TICK_RATE
 
 class Game:
     def __init__(self):
-        self.player = Player()
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        rooms_path = os.path.join(script_dir, "..", "data", "rooms.json")
-        with open(rooms_path, "r") as f:
-            self.rooms = json.load(f)
+        planet_path = os.path.join(script_dir, "..", "data", "planet.json")
+        with open(planet_path, "r") as f:
+            self.planet = json.load(f)
+        self.colony = Colony(2, 2)  # Starting position
+        self.fog = [['?' for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
+        self.fog[2][2] = 'C'  # Reveal colony tile
         self.running = True
+        self.last_tick = time.time()
 
     def run(self):
-        print("Welcome to the Adventure!")
-        self.describe_room()
+        print("Welcome to Planet Colonization!")
+        self.render_map()
         while self.running:
-            command = input("> ").strip().lower().split()
-            self.process_command(command)
+            self.update()
+            self.process_input()
+            time.sleep(0.1)  # Light sleep to prevent CPU hogging
 
-    def describe_room(self):
-        room = self.rooms[self.player.location]
-        print(f"\nYou are in the {self.player.location}.")
-        print(room["description"])
-        if "items" in room:
-            print("Items here:", ", ".join(room["items"]))
-        print("Exits:", ", ".join(room["exits"].keys()))
+    def update(self):
+        current_time = time.time()
+        if current_time - self.last_tick >= TICK_RATE:
+            self.colony.update()
+            self.last_tick = current_time
+            self.render_map()
 
-    def process_command(self, command):
-        if not command:
-            return
-        action = command[0]
-        if action == "quit":
-            self.running = False
-            print("Goodbye!")
-        elif action == "go" and len(command) > 1:
-            direction = command[1]
-            room = self.rooms[self.player.location]
-            if direction in room["exits"]:
-                self.player.move(room["exits"][direction])
-                self.describe_room()
-            else:
-                print("You can't go that way!")
-        elif action == "take" and len(command) > 1:
-            item = command[1]
-            room = self.rooms[self.player.location]
-            if "items" in room and item in room["items"]:
-                self.player.take(item)
-                room["items"].remove(item)
-            else:
-                print("No such item here!")
-        else:
-            print("Commands: go <direction>, take <item>, quit")
+    def render_map(self):
+        os.system('clear' if os.name == 'posix' else 'cls')  # Clear console
+        print(f"Metal: {self.colony.metal}")
+        for row in self.fog:
+            print(" ".join(row))
+        print("\nCommands: quit")
+
+    def process_input(self):
+        try:
+            command = input("> ").strip().lower()
+            if command == "quit":
+                self.running = False
+                print("Leaving the planet...")
+        except EOFError:
+            pass  # Ignore Ctrl+D in Gitpod
