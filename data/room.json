@@ -1,0 +1,16 @@
+{
+    "hall": {
+        "description": "A grand hall with dusty chandeliers.",
+        "exits": {"north": "library", "south": "kitchen"},
+        "items": ["key"]
+    },
+    "library": {
+        "description": "A room filled with old books.",
+        "exits": {"south": "hall"},
+        "items": ["book"]
+    },
+    "kitchen": {
+        "description": "A messy kitchen with a rusty sink.",
+        "exits": {"north": "hall"}
+    }
+}
