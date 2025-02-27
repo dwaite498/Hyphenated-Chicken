@@ -25,6 +25,7 @@ class Game:
         self.font = pygame.font.SysFont(None, 24)
 
     def run(self):
+        print("Game loop starting...")
         while self.running:
             self.handle_events()
             self.update()
