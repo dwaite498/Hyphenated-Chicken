@@ -91,7 +91,7 @@ class Game:
                 pygame.draw.rect(self.screen, (50, 50, 50), rect, 1)
                 if self.selected == self.colony and x == 5 and y == 5:
                     pygame.draw.rect(self.screen, (255, 255, 255), rect, 2)
-                elif self.selected == self.scout and x == self.scout.x and y == self.scout.y:
+                elif self.selected == self.scout and self.scout and x == self.scout.x and y == self.scout.y:
                     pygame.draw.rect(self.screen, (255, 255, 255), rect, 2)
         metal_text = self.font.render(f"Metal: {self.colony.metal}", True, (255, 255, 255))
         self.screen.blit(metal_text, (10, 10))
