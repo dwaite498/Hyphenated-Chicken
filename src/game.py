@@ -7,7 +7,7 @@ import unit
 import rendering
 import movement
 import combat
-from settings import MAP_WIDTH, MAP_HEIGHT, WINDOW_SIZE
+from settings import MAP_WIDTH, MAP_HEIGHT, WINDOW_SIZE, TILE_SIZE
 
 class Game:
     def __init__(self):
