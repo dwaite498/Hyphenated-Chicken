@@ -17,9 +17,20 @@ class Game:
         planet_path = os.path.join(script_dir, "..", "data", "planet.json")
         with open(planet_path, "r") as f:
             self.planet = json.load(f)
-        self.colonies = [Colony(5, 5)]  # Start with one colony
+        self.colonies = [Colony(4, 4)]  # Center at (4, 4)
         self.fog = [['?' for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
-        self.fog[5][5] = 'C'
+        self.fog[4][4] = 'C'
+        # Initial 1-tile vision around colony
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                x, y = 4 + dx, 4 + dy
+                if 0 <= x < MAP_WIDTH and 0 <= y < MAP_HEIGHT:
+                    if [x, y] in self.planet["resources"]["metal"]:
+                        self.fog[y][x] = "M"
+                    elif [x, y] in self.planet["enemies"]:
+                        self.fog[y][x] = "E"
+                    else:
+                        self.fog[y][x] = self.planet["tiles"][y][x]
         self.scouts = []
         self.constructors = []
         self.enemies = [unit.Enemy(x, y) for x, y in self.planet["enemies"]]
@@ -42,9 +53,19 @@ class Game:
         planet_path = os.path.join(script_dir, "..", "data", "planet.json")
         with open(planet_path, "r") as f:
             self.planet = json.load(f)
-        self.colonies = [Colony(5, 5)]
+        self.colonies = [Colony(4, 4)]
         self.fog = [['?' for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
-        self.fog[5][5] = 'C'
+        self.fog[4][4] = 'C'
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                x, y = 4 + dx, 4 + dy
+                if 0 <= x < MAP_WIDTH and 0 <= y < MAP_HEIGHT:
+                    if [x, y] in self.planet["resources"]["metal"]:
+                        self.fog[y][x] = "M"
+                    elif [x, y] in self.planet["enemies"]:
+                        self.fog[y][x] = "E"
+                    else:
+                        self.fog[y][x] = self.planet["tiles"][y][x]
         self.scouts = []
         self.constructors = []
         self.enemies = [unit.Enemy(x, y) for x, y in self.planet["enemies"]]
@@ -84,8 +105,8 @@ class Game:
                         print(f"Build menu toggled via B: {self.show_build_menu}")
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos[0] // TILE_SIZE, event.pos[1] // TILE_SIZE
-                # Button checks first
                 if event.button == 1:
+                    # Button checks first
                     if 620 <= event.pos[0] <= 700:
                         if 540 <= event.pos[1] <= 570:  # Guide button
                             self.show_guide = not self.show_guide
@@ -97,6 +118,10 @@ class Game:
                             self.show_guide = False
                             if self.debug:
                                 print(f"Build menu toggled: {self.show_build_menu}")
+                        elif 460 <= event.pos[1] <= 490 and self.game_started and not self.game_over:  # Restart button
+                            self.reset_game()
+                            if self.debug:
+                                print("Game restarted from playfield")
                     guide_active = self.show_guide and 350 <= event.pos[0] <= 450 and 500 <= event.pos[1] <= 540
                     # Build menu options
                     if self.show_build_menu and self.colonies and self.colonies[0] in self.selected:
@@ -115,7 +140,7 @@ class Game:
                                         print(f"Built constructor, total: {len(self.constructors)}")
                     # Close menus on outside click
                     if (self.show_guide or self.show_build_menu) and not (
-                        (620 <= event.pos[0] <= 700 and 500 <= event.pos[1] <= 570) or  # Buttons
+                        (620 <= event.pos[0] <= 700 and 460 <= event.pos[1] <= 570) or  # Buttons
                         (300 <= event.pos[0] <= 500 and 150 <= event.pos[1] <= 350) or  # Build menu
                         guide_active  # Guide (Start Game overlaps)
                     ):
@@ -153,7 +178,7 @@ class Game:
                                 self.selected = [selected_scout]
                                 if self.debug:
                                     print(f"Selected scout at ({x}, {y})")
-                        elif self.fog[y][x] == 'C' and not selected_scout:
+                        elif self.fog[y][x] == 'C' and not any(isinstance(sel, unit.Scout) for sel in self.selected):
                             for colony in self.colonies:
                                 if colony.x == x and colony.y == y:
                                     self.selected = [colony]
@@ -245,6 +270,9 @@ class Game:
                     self.fog[constructor.y][constructor.x] = 'C'
                     if self.debug:
                         print(f"New colony built at ({constructor.x}, {constructor.y})")
+            # Scout movement
+            for scout in self.scouts:
+                scout.update(self)
             self.last_combat_tick = current_time
             # Check game over
             if not self.colonies:
@@ -294,29 +322,38 @@ class Game:
                         pygame.draw.rect(self.screen, (100, 100, 100), rect)
                     elif tile == 'C':
                         pygame.draw.rect(self.screen, (0, 255, 0), rect)
-                        for scout in self.scouts:
-                            if scout.x == x and scout.y == y and self.flash_on:
-                                pygame.draw.rect(self.screen, (0, 0, 255), rect)
-                        for constructor in self.constructors:
-                            if constructor.x == x and constructor.y == y:
-                                color = (255, 0, 255) if not constructor.building else (0, 255, 0) if self.flash_on else (255, 0, 255)
-                                pygame.draw.rect(self.screen, color, rect)
-                    elif tile == 'S':
-                        pygame.draw.rect(self.screen, (0, 0, 255), rect)
                     elif tile == 'M':
                         pygame.draw.rect(self.screen, (255, 255, 0), rect)
                     elif tile == 'E':
                         pygame.draw.rect(self.screen, (255, 0, 0), rect)
                     pygame.draw.rect(self.screen, (50, 50, 50), rect, 1)
-                    if self.colonies and self.colonies[0] in self.selected and x == 5 and y == 5:
-                        pygame.draw.rect(self.screen, (255, 255, 255), rect, 2)
-                    for sel in self.selected:
-                        if sel in self.scouts and sel.x == x and sel.y == y:
-                            pygame.draw.rect(self.screen, (255, 255, 255), rect, 2)
-            for enemy in self.enemies:
-                rect = pygame.Rect(enemy.x * TILE_SIZE, enemy.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                pygame.draw.rect(self.screen, (255, 0, 0), rect)
+            # Render units and colonies explicitly
+            for colony in self.colonies:
+                rect = pygame.Rect(colony.x * TILE_SIZE, colony.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                pygame.draw.rect(self.screen, (0, 255, 0), rect)
                 pygame.draw.rect(self.screen, (50, 50, 50), rect, 1)
+                if colony in self.selected:
+                    pygame.draw.rect(self.screen, (255, 255, 255), rect, 2)
+            for scout in self.scouts:
+                rect = pygame.Rect(scout.x * TILE_SIZE, scout.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                pygame.draw.rect(self.screen, (0, 0, 255), rect)
+                pygame.draw.rect(self.screen, (50, 50, 50), rect, 1)
+                if scout in self.selected:
+                    pygame.draw.rect(self.screen, (255, 255, 255), rect, 2)
+                if scout.x != scout.target_x or scout.y != scout.target_y:
+                    pygame.draw.line(self.screen, (255, 255, 255),
+                                    (scout.x * TILE_SIZE + TILE_SIZE // 2, scout.y * TILE_SIZE + TILE_SIZE // 2),
+                                    (scout.target_x * TILE_SIZE + TILE_SIZE // 2, scout.target_y * TILE_SIZE + TILE_SIZE // 2), 2)
+            for constructor in self.constructors:
+                rect = pygame.Rect(constructor.x * TILE_SIZE, constructor.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                color = (255, 0, 255) if not constructor.building else (0, 255, 0) if self.flash_on else (255, 0, 255)
+                pygame.draw.rect(self.screen, color, rect)
+                pygame.draw.rect(self.screen, (50, 50, 50), rect, 1)
+            for enemy in self.enemies:
+                if self.fog[enemy.y][enemy.x] != '?':
+                    rect = pygame.Rect(enemy.x * TILE_SIZE, enemy.y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                    pygame.draw.rect(self.screen, (255, 0, 0), rect)
+                    pygame.draw.rect(self.screen, (50, 50, 50), rect, 1)
             # Sidebar
             pygame.draw.rect(self.screen, (50, 50, 50), (600, 0, 200, 600))
             metal_text = self.font.render(f"Metal: {self.colonies[0].metal if self.colonies else 0}", True, (255, 255, 255))
@@ -347,6 +384,10 @@ class Game:
             pygame.draw.rect(self.screen, (150, 150, 150), build_rect)
             build_text = self.font.render("Build", True, (0, 0, 0))
             self.screen.blit(build_text, (640, 505))
+            restart_rect = pygame.Rect(620, 460, 80, 30)
+            pygame.draw.rect(self.screen, (150, 150, 150), restart_rect)
+            restart_text = self.font.render("Restart", True, (0, 0, 0))
+            self.screen.blit(restart_text, (635, 465))
             # Hover info (board only)
             if 0 <= mouse_x < 600 and 0 <= mouse_y < 600:
                 tile = self.fog[hover_y][hover_x]
@@ -358,7 +399,10 @@ class Game:
                 elif tile == 'M':
                     hover_text = "Metal Deposit"
                 elif tile == 'E':
-                    hover_text = "Enemy"
+                    for enemy in self.enemies:
+                        if enemy.x == hover_x and enemy.y == hover_y:
+                            hover_text = f"Enemy - HP: {enemy.health}"
+                            break
                 elif tile == '?':
                     hover_text = "Unexplored"
                 if hover_text:
